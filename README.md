@@ -1,21 +1,33 @@
-# Swap DApp MVP - Base Sepolia Testnet
+# Swap DApp MVP – Base Sepolia Testnet
 
-A minimal token swap decentralized application running on Base Sepolia Testnet. This project demonstrates a complete flow from frontend to backend to blockchain for executing token swaps.
+A minimal token swap decentralized application running on Base Sepolia Testnet.  
+This MVP demonstrates a complete on-chain swap flow from frontend UI → smart contract interaction, using Wagmi + Viem for wallet connection and transaction execution.
+
+---
 
 ## Project Overview
 
-This DApp enables users to select two tokens (Token A and Token B), input an amount, and execute a real swap transaction on Base Sepolia testnet. The architecture follows a three-tier structure: Smart Contract, Backend API, and Frontend Interface.
+This DApp enables users to:
+
+- Select two tokens (Token A & Token B)
+- Input an amount to swap
+- Execute a real on-chain transaction on Base Sepolia testnet
+
+**No backend is required for the MVP** — data such as estimated output or swap status will be fetched directly from the smart contract via Viem.
+
+---
 
 ## Technology Stack
 
-| Component         | Technology                            |
-| ----------------- | ------------------------------------- |
-| Smart Contract    | Solidity ^0.8.20, Hardhat ^2.x        |
-| Testing Framework | Mocha, Chai                           |
-| Backend           | Node.js, Express, Ethers.js/Viem      |
-| Frontend          | Next.js ^14, Wagmi ^2.x, Viem ^2.x    |
-| Network           | Base Sepolia Testnet                  |
-| RPC Provider      | Alchemy, Infura, or Base Official RPC |
+| Component         | Technology                                     |
+| ----------------- | ---------------------------------------------- |
+| Smart Contract    | Solidity ^0.8.20, Hardhat ^2.x                 |
+| Testing Framework | Mocha, Chai                                    |
+| Frontend          | Next.js ^14, TypeScript, Wagmi ^2.x, Viem ^2.x |
+| Network           | Base Sepolia Testnet                           |
+| RPC Provider      | Alchemy, Infura, or Base Official RPC          |
+
+---
 
 ## Project Structure
 
@@ -27,201 +39,122 @@ project-root/
 │   │   └── TokenSwap.test.js
 │   └── scripts/
 │       └── deploy.js
-├── backend/
-│   ├── app.js
-│   ├── routes/
-│   │   └── swap.js
-│   ├── services/
-│   │   └── swapService.js
-│   ├── utils/
-│   │   └── provider.js
-│   ├── abi/
-│   │   └── TokenSwap.json
-│   └── .env
 ├── frontend/
 │   ├── pages/
-│   │   ├── index.tsx
+│   │   ├── index.tsx          # main swap UI
 │   │   └── _app.tsx
 │   ├── components/
-│   │   └── SwapForm.tsx
+│   │   ├── SwapForm.tsx       # handles user input + swap trigger
+│   │   ├── TokenSelector.tsx  # token dropdown component
+│   │   └── TxStatus.tsx       # show pending/success/error
 │   ├── lib/
-│   │   └── wagmiClient.ts
-│   └── styles/
-│       └── globals.css
+│   │   ├── wagmiClient.ts     # wagmi + viem setup
+│   │   ├── contract.ts        # contract address + ABI config
+│   │   └── utils.ts           # helper (formatting, toast, etc.)
+│   ├── styles/
+│   │   └── globals.css
+│   └── .env.local             # local environment variables
 └── hardhat.config.js
 ```
 
+---
+
 ## Smart Contract Specification
 
-### Core Functions
-
-**constructor(address \_router)**
-
-- Initializes the contract with the DEX router address
-
-**swapExactInputSingle(address tokenIn, address tokenOut, uint256 amountIn)**
-
-- Executes a single-path swap with exact input amount
-
-**swapExactOutputSingle(address tokenIn, address tokenOut, uint256 amountOut)**
-
-- Executes a single-path swap with exact output amount (optional for MVP)
-
-**getEstimatedAmountOut(address tokenIn, address tokenOut, uint256 amountIn)**
-
-- Returns estimated output amount for UI display (optional)
-
-**withdrawToken(address token)**
-
-- Admin function to recover stuck tokens
-
-**receive() / fallback()**
-
-- Handles ETH/WETH unwrapping if required (optional)
-
-### Testing Requirements
-
-The test suite should cover:
-
-- Successful contract deployment
-- Happy path for swapExactInputSingle
-- Failure scenarios: insufficient allowance, invalid amounts, revert conditions
-- Optional: Forked Base Sepolia integration tests
-
-
-## Frontend Implementation
+### TokenSwap.sol
 
 // TODO
 
+| Function                                                                      | Description                                              |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `constructor(address _router)`                                                | Initializes contract with DEX router address             |
+| `swapExactInputSingle(address tokenIn, address tokenOut, uint256 amountIn)`   | Executes a single-path swap                              |
+| `swapExactOutputSingle(address tokenIn, address tokenOut, uint256 amountOut)` | Executes a swap targeting exact output amount (optional) |
+| `getEstimatedAmountOut(...)`                                                  | Returns estimated output amount (optional)               |
+| `withdrawToken(address token)`                                                | Admin recovery function                                  |
+| `receive()` / `fallback()`                                                    | Handles ETH/WETH unwrap (optional)                       |
 
-## Backend Implementation
+---
+
+## Frontend
+
+### Environment Variables (`.env.local`)
+
 // TODO
 
+### Wagmi + Viem Setup (`lib/wagmiClient.ts`)
 
+// TODO
 
-## Base Sepolia Testnet Configuration
+### Contract Configuration (`lib/contract.ts`)
 
-**RPC Endpoint:**
+// TODO
 
-**Faucet:** https://bridge.base.org/testnet
+### Core Swap Logic (`components/SwapForm.tsx`)
 
-To get started:
+// TODO
 
-1. Configure MetaMask for Base Sepolia network
-2. Obtain test ETH from the faucet
-3. Deploy test ERC20 tokens if needed
-4. Deploy the TokenSwap contract
-5. Update contract addresses in environment configuration
+---
 
-## Integration Architecture
+## Deployment & Commands
 
-### Contract to Backend
-
-- Solidity developer provides deployed contract address and ABI JSON
-- Backend loads ABI and contract address to expose /swap endpoint
-- Backend executes transactions on behalf of users or via relayer pattern
-
-### Backend to Frontend
-
-- Frontend sends POST request to /swap with parameters: tokenIn, tokenOut, amountInWei
-- Backend responds with transaction hash or error message
-- UI displays transaction status: pending, success, or failed
-
-### Frontend to Contract (Alternative)
-
-- Direct wallet interaction using Wagmi/Viem hooks
-- User signs transactions directly through connected wallet
-- Bypasses backend for fully decentralized flow
-
-## Setup and Commands
-
-### Install Dependencies
+### Install dependencies
 
 ```bash
 npm install
 ```
 
-### Compile Contracts
+### Compile contracts
 
 ```bash
 npx hardhat compile
 ```
 
-### Deploy to Base Sepolia
+### Deploy contract to Base Sepolia
 
 ```bash
 npx hardhat run contracts/scripts/deploy.js --network base-sepolia
 ```
 
-### Run Tests
-
-```bash
-npx hardhat test
-```
-
-### Start Backend Server
-
-```bash
-cd backend
-npm run dev
-```
-
-### Start Frontend Application
+### Run frontend locally
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-## Environment Configuration
+Then open: http://localhost:3000
 
-Create a `.env` file in the backend directory:
-
-```
-RPC_URL=
-PRIVATE_KEY=0xYOUR_TEST_WALLET_PRIVATE_KEY
-CONTRACT_ADDRESS=0xDEPLOYED_CONTRACT_ADDRESS
-PORT=3001
-```
-
-**Security Notice:** Use a dedicated test wallet only. Never commit private keys or .env files to version control.
-
-## Development Timeline
-
-|  **Week**  | **Focus**                          | **Description**                                                                                                                                                                                                                          |
-| :--------: | :--------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Week 1** | Core System Setup & MVP Completion | Build the full project architecture — including smart contract, backend API, and basic frontend — to ensure the system runs end-to-end by **Sunday**. Prepare for the demo discussion and decide on potential new features to highlight. |
-| **Week 2** | Feature Expansion & Enhancement    | Integrate and test new features discussed after the MVP demo. Improve UX/UI, add advanced swap logic or analytics, and refine overall stability and presentation for the final showcase.                                                 |
-
-## Team Responsibilities
-
-**Backend Developer**
-
-- Implement Express API server
-- Integrate contract interactions
-- Handle transaction management
-
-**Solidity Developer**
-
-- Develop and test TokenSwap.sol
-- Deploy contract to testnet
-- Provide ABI and contract address
-
-**Frontend Developer**
-
-- Build Next.js user interface
-- Implement wallet connection
-- Integrate swap functionality
+---
 
 ## Definition of Done
 
-The MVP is considered complete when:
+- [ ] TokenSwap.sol deployed on Base Sepolia Testnet
+- [ ] Frontend successfully connects wallet via Wagmi/Viem
+- [ ] User can select tokens, input amount, and call `swapExactInputSingle`
+- [ ] UI displays transaction status (pending/success/fail)
+- [ ] MVP demo shows a full on-chain swap without backend
 
-1. TokenSwap contract is deployed on Base Sepolia testnet
-2. Backend /swap endpoint successfully executes swaps and returns transaction hashes
-3. Frontend allows wallet connection, swap submission, and displays transaction results
-4. End-to-end demo successfully demonstrates the complete swap flow
+---
+
+## Development Timeline
+
+| Week   | Focus             | Description                                          |
+| ------ | ----------------- | ---------------------------------------------------- |
+| Week 1 | Core System Setup | Build contract + frontend MVP (end-to-end swap flow) |
+| Week 2 | Enhancement & UX  | UI polish, add token lists, optional quote display   |
+
+---
+
+## Team Responsibilities
+
+| Role               | Tasks                                                 |
+| ------------------ | ----------------------------------------------------- |
+| Solidity Developer | Build and deploy TokenSwap.sol                        |
+| Frontend Developer | Implement UI, wallet connection, and swap interaction |
+
+---
 
 ## License
 
-This project is for educational and demonstration purposes.
+For educational and demonstration purposes only.
