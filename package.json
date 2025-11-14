@@ -1,0 +1,31 @@
+{
+  "name": "base-swap-mvp",
+  "version": "1.0.0",
+  "description": "A minimal token swap decentralized application running on Base Sepolia Testnet.   This MVP demonstrates a complete on-chain swap flow from frontend UI → smart contract interaction, using Wagmi + Viem for wallet connection and transaction execution.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Encode-EVM-Bootcamp-Team3/base-swap-mvp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Encode-EVM-Bootcamp-Team3/base-swap-mvp/issues"
+  },
+  "homepage": "https://github.com/Encode-EVM-Bootcamp-Team3/base-swap-mvp#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "chai": "^4.5.0",
+    "hardhat": "^2.27.0",
+    "mocha": "^11.7.5"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "viem": "^2.39.0",
+    "wagmi": "^2.19.3"
+  }
+}
