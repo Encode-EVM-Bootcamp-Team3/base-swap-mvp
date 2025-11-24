@@ -1,160 +1,232 @@
-# Swap DApp MVP – Base Sepolia Testnet
+# Swap DApp MVP – Ethereum Sepolia Testnet
 
-A minimal token swap decentralized application running on Base Sepolia Testnet.  
-This MVP demonstrates a complete on-chain swap flow from frontend UI → smart contract interaction, using Wagmi + Viem for wallet connection and transaction execution.
-
----
-
-## Project Overview
-
-This DApp enables users to:
-
-- Select two tokens (Token A & Token B)
-- Input an amount to swap
-- Execute a real on-chain transaction on Base Sepolia testnet
-
-**No backend is required for the MVP** — data such as estimated output or swap status will be fetched directly from the smart contract via Viem.
+A minimal on‑chain token swap application running on ETH Sepolia.
+This MVP demonstrates a functional ERC‑20 swap using a simple swap smart contract and web frontend interaction.
 
 ---
 
-## Technology Stack
+## Features
 
-| Component         | Technology                                     |
-| ----------------- | ---------------------------------------------- |
-| Smart Contract    | Solidity ^0.8.20, Hardhat ^2.x                 |
-| Testing Framework | Mocha, Chai                                    |
-| Frontend          | Next.js ^14, TypeScript, Wagmi ^2.x, Viem ^2.x |
-| Network           | Base Sepolia Testnet                           |
-| RPC Provider      | Alchemy, Infura, or Base Official RPC          |
+- Select input & output tokens (FUSDT → FUSDC or reverse)
+- Execute real swap transaction on ETH Sepolia
+- Connect wallet via wagmi + viem
+- Get live transaction status in UI
+- Uses deployed FakeUSDT / FakeUSDC contracts
+
+No backend server is required — all interactions happen via smart contract RPC calls.
 
 ---
 
-## Project Structure
+## Architecture & Directory Layout
 
 ```
-project-root/
-├── contracts/
+base-swap-mvp/
+├── contracts/                   # Solidity smart contracts
+│   ├── FakeUSDC.sol
+│   ├── FakeUSDT.sol
 │   ├── TokenSwap.sol
-│   ├── test/
-│   │   └── TokenSwap.test.js
-│   └── scripts/
-│       └── deploy.js
-├── frontend/
-│   ├── pages/
-│   │   ├── index.tsx          # main swap UI
-│   │   └── _app.tsx
-│   ├── components/
-│   │   ├── SwapForm.tsx       # handles user input + swap trigger
-│   │   ├── TokenSelector.tsx  # token dropdown component
-│   │   └── TxStatus.tsx       # show pending/success/error
+│   └── test/TokenSwap.test.js
+│
+├── scripts/                    # Automation scripts
+│   ├── deploy_tokens.js        # Deploy USDT & USDC
+│   ├── deploy_swap.js          # Deploy TokenSwap
+│   ├── mint_tokens.js          # Mint tokens
+│   └── fundLiquidity.js        # Provide liquidity
+│
+├── frontend/                   # UI application
 │   ├── lib/
-│   │   ├── wagmiClient.ts     # wagmi + viem setup
-│   │   ├── contract.ts        # contract address + ABI config
-│   │   └── utils.ts           # helper (formatting, toast, etc.)
-│   ├── styles/
-│   │   └── globals.css
-│   └── .env.local             # local environment variables
-└── hardhat.config.js
+│   │   ├── wagmiClient.ts
+│   │   ├── swap.ts
+│   │   ├── tokenSwapAbi.ts
+│   │   └── contract.ts
+│   ├── components/
+│   │   ├── SwapCard.tsx
+│   │   ├── SwapForm.tsx
+│   │   ├── TokenSelector.tsx
+│   │   └── TxStatus.tsx
+│   ├── pages/
+│   │   ├── index.tsx
+│   │   ├── _app.tsx
+│   │   └── _document.tsx
+│   ├── abi/FakeUSDT.json
+│   ├── abi/FakeUSDC.json
+│   └── styles/
+│
+├── hardhat.config.ts
+├── README.md
+├── package.json
+└── .env (ignored)
 ```
 
 ---
 
-## Smart Contract Specification
+## Technology Versions
 
-### TokenSwap.sol
+### Smart Contract
 
-// TODO
+```
+Solidity: ^0.8.20
+Hardhat: ^2.22.2
+typechain: ^8.x
+openzeppelin/contracts: ^5.x
+node: >=18
+```
 
-| Function                                                                      | Description                                              |
-| ----------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `constructor(address _router)`                                                | Initializes contract with DEX router address             |
-| `swapExactInputSingle(address tokenIn, address tokenOut, uint256 amountIn)`   | Executes a single-path swap                              |
-| `swapExactOutputSingle(address tokenIn, address tokenOut, uint256 amountOut)` | Executes a swap targeting exact output amount (optional) |
-| `getEstimatedAmountOut(...)`                                                  | Returns estimated output amount (optional)               |
-| `withdrawToken(address token)`                                                | Admin recovery function                                  |
-| `receive()` / `fallback()`                                                    | Handles ETH/WETH unwrap (optional)                       |
+### Frontend
 
----
-
-## Frontend
-
-### Environment Variables (`.env.local`)
-
-// TODO
-
-### Wagmi + Viem Setup (`lib/wagmiClient.ts`)
-
-// TODO
-
-### Contract Configuration (`lib/contract.ts`)
-
-// TODO
-
-### Core Swap Logic (`components/SwapForm.tsx`)
-
-// TODO
+```
+Next.js: ^14
+React: ^18
+wagmi: ^2.x
+viem: ^2.x
+TypeScript: ^5.x
+```
 
 ---
 
-## Deployment & Commands
+# Setup Instructions (Full Guide)
 
-### Install dependencies
+## 1. Clone Repository
 
 ```bash
+git clone https://github.com/Encode-EVM-Bootcamp-Team3/base-swap-mvp.git
+cd base-swap-mvp
+```
+
+---
+
+# PRIVATE KEY WARNING
+
+Team members DO NOT need private key except the main deployer.
+
+Only ONE person (project owner) should have:
+
+```
+PRIVATE_KEY=xxxxxxxxxxxx
+```
+
+All other teammates only need public env variables.
+
+---
+
+# Environment Variables
+
+### Deployment side (.env — NOT COMMITTED)
+
+```
+PRIVATE_KEY=xxx
+ETH_SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/<your-key>
+```
+
+### Frontend side (.env.local — allowed for teammates)
+
+```
+NEXT_PUBLIC_SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/hrOT4tHWSRwNB5mHC6CDf
+NEXT_PUBLIC_FAKE_USDT_ADDRESS=0x58d1fB5788283Bc6abb12cF958f56ABAAAf6CC7C
+NEXT_PUBLIC_FAKE_USDC_ADDRESS=0x51e78127EA289f36E39d6685bd7e59468814c813
+NEXT_PUBLIC_TOKEN_SWAP_ADDRESS=0xB80609D89eFE4b3e1A0Ab91d6c16BB520B762256
+```
+
+---
+
+# Deployment Steps (only for deployer)
+
+## Step 1 — Install dependencies
+
+```
 npm install
 ```
 
-### Compile contracts
+## Step 2 — Deploy Fake Tokens
 
 ```bash
-npx hardhat compile
+npx hardhat run scripts/deploy_tokens.js --network sepolia
 ```
 
-### Deploy contract to Base Sepolia
+the script outputs:
+
+```
+FakeUSDT deployed at: 0x...
+FakeUSDC deployed at: 0x...
+```
+
+## Step 3 — Deploy TokenSwap
 
 ```bash
-npx hardhat run contracts/scripts/deploy.js --network base-sepolia
+npx hardhat run scripts/deploy_swap.js --network sepolia
 ```
 
-### Run frontend locally
+## Step 4 — Mint tokens
+
+```bash
+npx hardhat run scripts/mint_tokens.js --network sepolia
+```
+
+## Step 5 — Provide liquidity
+
+```bash
+npx hardhat run scripts/fundLiquidity.js --network sepolia
+```
+
+---
+
+# Run Frontend
 
 ```bash
 cd frontend
+npm install
 npm run dev
 ```
 
-Then open: http://localhost:3000
+Navigate to:
+
+```
+http://localhost:3000
+```
 
 ---
 
-## Definition of Done
+# Using The App
 
-- [ ] TokenSwap.sol deployed on Base Sepolia Testnet
-- [ ] Frontend successfully connects wallet via Wagmi/Viem
-- [ ] User can select tokens, input amount, and call `swapExactInputSingle`
-- [ ] UI displays transaction status (pending/success/fail)
-- [ ] MVP demo shows a full on-chain swap without backend
-
----
-
-## Development Timeline
-
-| Week   | Focus             | Description                                          |
-| ------ | ----------------- | ---------------------------------------------------- |
-| Week 1 | Core System Setup | Build contract + frontend MVP (end-to-end swap flow) |
-| Week 2 | Enhancement & UX  | UI polish, add token lists, optional quote display   |
+1. connect Rabby / MetaMask
+2. switch network → Ethereum Sepolia
+3. choose token pair: FUSDT or FUSDC
+4. enter amount
+5. approve (first time only)
+6. swap
+7. see tx on Etherscan
 
 ---
 
-## Team Responsibilities
+# Testing
 
-| Role               | Tasks                                                 |
-| ------------------ | ----------------------------------------------------- |
-| Solidity Developer | Build and deploy TokenSwap.sol                        |
-| Frontend Developer | Implement UI, wallet connection, and swap interaction |
+```bash
+npx hardhat test
+```
 
 ---
 
-## License
+# Success Criteria
 
-For educational and demonstration purposes only.
+- Swap executes correctly on ETH Sepolia
+- Transactions visible on etherscan
+- Frontend shows transaction status
+- No backend used
+
+---
+
+# Notes for Contributors
+
+- Changes to contracts require redeploy
+- After redeploy, update:
+
+  - NEXT_PUBLIC_TOKEN_SWAP_ADDRESS
+  - ABI files
+
+- Frontend interacts only through wagmi + viem
+
+---
+
+# License
+
+For educational / bootcamp learning purposes only.
