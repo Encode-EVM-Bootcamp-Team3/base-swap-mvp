@@ -3,10 +3,11 @@
 A minimal on‑chain token swap application running on ETH Sepolia.
 This MVP demonstrates a functional ERC‑20 swap using a simple swap smart contract and web frontend interaction.
 
-
 ### UI Preview
 
-<img src="public/screenshots/swap-ui.png" width="420">
+<p align="center">
+  <img src="frontend/public/screenshots/swap-ui.png" width="650">
+</p>
 
 ---
 
