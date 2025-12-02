@@ -1,3 +1,4 @@
+// frontend/components/SwapForm.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,10 +11,7 @@ import { TOKEN_SWAP_ADDRESS, tokenSwapAbi } from '../lib/contract';
 
 type TxStatusValue = 'idle' | 'pending' | 'success' | 'error';
 
-const resolveAddress = (
-  key: string,
-  fallback?: string,
-): `0x${string}` => {
+const resolveAddress = (key: string, fallback?: string): `0x${string}` => {
   const value = process.env[key];
   if (value && isAddress(value)) return getAddress(value);
   if (fallback && isAddress(fallback)) {
@@ -28,7 +26,7 @@ const TOKENS = [
     symbol: 'FUSDT',
     address: resolveAddress(
       'NEXT_PUBLIC_FAKE_USDT_ADDRESS',
-      '0x58d1fB5788283Bc6abb12cF958f56ABAAAf6CC7C',
+      '0x58d1fB5788283Bc6abb12cF958f56ABAAAf6CC7C'
     ),
     decimals: 6,
   },
@@ -36,7 +34,7 @@ const TOKENS = [
     symbol: 'FUSDC',
     address: resolveAddress(
       'NEXT_PUBLIC_FAKE_USDC_ADDRESS',
-      '0x51e78127EA289f36E39d6685bd7e59468814c813',
+      '0x51e78127EA289f36E39d6685bd7e59468814c813'
     ),
     decimals: 6,
   },
@@ -47,7 +45,7 @@ type TokenSymbol = (typeof TOKENS)[number]['symbol'];
 const TOKENS_BY_SYMBOL: Record<TokenSymbol, (typeof TOKENS)[number]> =
   TOKENS.reduce(
     (acc, token) => ({ ...acc, [token.symbol]: token }),
-    {} as Record<TokenSymbol, (typeof TOKENS)[number]>,
+    {} as Record<TokenSymbol, (typeof TOKENS)[number]>
   );
 
 function shortenAddress(addr: string) {
@@ -74,6 +72,7 @@ export default function SwapForm() {
   } = useConnect();
   const { disconnect } = useDisconnect();
   const { writeContractAsync } = useWriteContract();
+
   const primaryConnector =
     connectors.find((c) => c.id === 'injected') ?? connectors[0];
 
@@ -82,9 +81,8 @@ export default function SwapForm() {
   const tokenInMeta = TOKENS_BY_SYMBOL[tokenIn];
   const tokenOutMeta = TOKENS_BY_SYMBOL[tokenOut];
 
-  const ensureValidAmount = (value: string) => {
-    return value && Number(value) > 0;
-  };
+  const ensureValidAmount = (value: string) =>
+    value && Number(value) > 0 && !Number.isNaN(Number(value));
 
   const handleSwapClick = async () => {
     setErrorMessage(undefined);
@@ -115,6 +113,7 @@ export default function SwapForm() {
 
       const amount = parseUnits(amountIn, tokenInMeta.decimals);
 
+      // 1) Approve
       await writeContractAsync({
         address: tokenInMeta.address,
         abi: erc20Abi,
@@ -123,6 +122,7 @@ export default function SwapForm() {
         args: [TOKEN_SWAP_ADDRESS, amount],
       });
 
+      // 2) Swap
       const hash = await writeContractAsync({
         address: TOKEN_SWAP_ADDRESS,
         abi: tokenSwapAbi,
@@ -142,6 +142,40 @@ export default function SwapForm() {
     }
   };
 
+  const handleApproveOnly = async () => {
+    if (!isConnected || !address) {
+      alert('Please connect your wallet first.');
+      return;
+    }
+
+    if (!ensureValidAmount(amountIn)) {
+      alert('Please enter a valid amount to approve.');
+      return;
+    }
+
+    const amount = parseUnits(amountIn, tokenInMeta.decimals);
+
+    try {
+      setTxStatus('pending');
+      const tx = await writeContractAsync({
+        address: tokenInMeta.address,
+        abi: erc20Abi,
+        functionName: 'approve',
+        chainId: sepolia.id,
+        args: [TOKEN_SWAP_ADDRESS, amount],
+      });
+
+      console.log('Approve OK:', tx);
+      setLastTxHash(tx as string);
+      setTxStatus('success');
+    } catch (err) {
+      console.error(err);
+      setTxStatus('error');
+      setErrorMessage(err instanceof Error ? err.message : 'Approve failed');
+      alert('Approve failed');
+    }
+  };
+
   const handleSwitchTokens = () => {
     setTokenIn(tokenOut);
     setTokenOut(tokenIn);
@@ -149,21 +183,21 @@ export default function SwapForm() {
 
   const isSwapping = txStatus === 'pending';
 
+  const cardStyle: React.CSSProperties = {
+    borderRadius: 24,
+    border: '1px solid #1f2937',
+    padding: 20,
+    background:
+      'radial-gradient(circle at top, rgba(59,130,246,0.12), transparent 55%) rgba(6,8,20,0.96)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 14,
+    boxShadow: '0 18px 60px rgba(0,0,0,0.65)',
+  };
+
   return (
-    <div
-      style={{
-        borderRadius: 16,
-        border: '1px solid #262626',
-        padding: 18,
-        background:
-          'radial-gradient(circle at top, rgba(59,130,246,0.15), transparent 60%) #050509',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14,
-        boxShadow: '0 12px 40px rgba(0,0,0,0.45)',
-      }}
-    >
-      {/* Wallet Connect */}
+    <div style={cardStyle}>
+      {/* Header */}
       <div
         style={{
           display: 'flex',
@@ -172,9 +206,24 @@ export default function SwapForm() {
           marginBottom: 4,
         }}
       >
-        <span style={{ fontSize: 14, fontWeight: 500, color: '#e5e5e5' }}>
-          Swap
-        </span>
+        <div>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 500,
+              color: '#e5e7eb',
+            }}
+          >
+            Swap
+          </div>
+          <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+            Base Sepolia • Router:{' '}
+            <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo' }}>
+              {TOKEN_SWAP_ADDRESS.slice(0, 6)}...
+              {TOKEN_SWAP_ADDRESS.slice(-4)}
+            </span>
+          </div>
+        </div>
 
         {!isConnected ? (
           <button
@@ -185,17 +234,19 @@ export default function SwapForm() {
             disabled={!primaryConnector || connectStatus === 'pending'}
             style={{
               fontSize: 12,
-              padding: '6px 10px',
+              padding: '7px 12px',
               borderRadius: 999,
               border: 'none',
               cursor: 'pointer',
-              background: '#3b82f6',
-              color: '#fff',
+              background:
+                'linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #4f46e5 100%)',
+              color: '#f9fafb',
               opacity:
                 !primaryConnector || connectStatus === 'pending' ? 0.7 : 1,
+              whiteSpace: 'nowrap',
             }}
           >
-            {connectStatus === 'pending' ? 'Connecting...' : 'Connect Wallet'}
+            {connectStatus === 'pending' ? 'Connecting…' : 'Connect Wallet'}
           </button>
         ) : (
           <button
@@ -203,12 +254,13 @@ export default function SwapForm() {
             onClick={() => disconnect()}
             style={{
               fontSize: 12,
-              padding: '6px 10px',
+              padding: '7px 12px',
               borderRadius: 999,
               border: '1px solid #374151',
-              background: '#0b1120',
-              color: '#e5e5e5',
+              background: '#020617',
+              color: '#e5e7eb',
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
             }}
           >
             {shortenAddress(address)}
@@ -220,8 +272,8 @@ export default function SwapForm() {
       <div
         style={{
           padding: 12,
-          borderRadius: 12,
-          background: 'rgba(15,23,42,0.85)',
+          borderRadius: 16,
+          background: 'rgba(15,23,42,0.95)',
           border: '1px solid #27272a',
           display: 'flex',
           flexDirection: 'column',
@@ -229,7 +281,7 @@ export default function SwapForm() {
         }}
       >
         <TokenSelector
-          label="From"
+          label="Pay"
           value={tokenIn}
           onChange={(v) => setTokenIn(v as TokenSymbol)}
           options={TOKENS}
@@ -237,67 +289,52 @@ export default function SwapForm() {
 
         <input
           type="number"
-          placeholder="0.0"
+          placeholder="0.00"
           value={amountIn}
           onChange={(e) => setAmountIn(e.target.value)}
           style={{
-            marginTop: 4,
+            marginTop: 6,
             width: '100%',
-            padding: '8px 10px',
-            borderRadius: 8,
-            border: '1px solid #333',
+            padding: '10px 12px',
+            borderRadius: 12,
+            border: '1px solid #1f2937',
             background: '#020617',
-            color: '#fff',
-            fontSize: 16,
+            color: '#f9fafb',
+            fontSize: 20,
+            textAlign: 'right',
+            outline: 'none',
           }}
         />
+        <div
+          style={{
+            marginTop: 2,
+            fontSize: 11,
+            color: '#6b7280',
+            textAlign: 'right',
+          }}
+        >
+          Balance: -- FUSDT
+        </div>
       </div>
 
-      {/* Approve Only */}
+      {/* Approve only button */}
       <button
         type="button"
+        onClick={handleApproveOnly}
+        disabled={!isConnected || isSwapping}
         style={{
-          marginTop: 6,
+          marginTop: 2,
           width: '100%',
-          padding: '10px 12px',
+          padding: '9px 12px',
           borderRadius: 999,
           border: 'none',
-          fontSize: 15,
+          fontSize: 13,
           fontWeight: 500,
-          cursor: isSwapping ? 'not-allowed' : 'pointer',
-          background: '#6366f1',
-          color: '#fff',
-        }}
-        onClick={async () => {
-          if (!isConnected || !address) {
-            alert('Please connect your wallet first.');
-            return;
-          }
-
-          if (!ensureValidAmount(amountIn)) {
-            alert('Please enter a valid amount to approve.');
-            return;
-          }
-
-          const amount = parseUnits(amountIn, tokenInMeta.decimals);
-
-          try {
-            console.log('Approving ...');
-            const tx = await writeContractAsync({
-              address: tokenInMeta.address,
-              abi: erc20Abi,
-              functionName: 'approve',
-              chainId: sepolia.id,
-              args: [TOKEN_SWAP_ADDRESS, amount],
-            });
-
-            console.log('Approve OK:', tx);
-            alert('Approve success!');
-            setLastTxHash(tx as string);
-          } catch (err) {
-            console.error(err);
-            alert('Approve failed');
-          }
+          cursor: !isConnected || isSwapping ? 'not-allowed' : 'pointer',
+          background:
+            'linear-gradient(135deg, rgba(129,140,248,0.18), rgba(129,140,248,0.28))',
+          color: '#e5e7eb',
+          opacity: isSwapping ? 0.8 : 1,
         }}
       >
         Approve Only
@@ -310,12 +347,13 @@ export default function SwapForm() {
           onClick={handleSwitchTokens}
           style={{
             borderRadius: 999,
-            border: '1px solid #27272a',
+            border: '1px solid #374151',
             background: '#020617',
-            color: '#e5e5e5',
+            color: '#e5e7eb',
             fontSize: 12,
-            padding: '4px 10px',
+            padding: '5px 12px',
             cursor: 'pointer',
+            marginTop: 2,
           }}
         >
           ⇅ Switch
@@ -326,8 +364,8 @@ export default function SwapForm() {
       <div
         style={{
           padding: 12,
-          borderRadius: 12,
-          background: 'rgba(15,23,42,0.85)',
+          borderRadius: 16,
+          background: 'rgba(15,23,42,0.95)',
           border: '1px solid #27272a',
           display: 'flex',
           flexDirection: 'column',
@@ -335,7 +373,7 @@ export default function SwapForm() {
         }}
       >
         <TokenSelector
-          label="To"
+          label="Receive"
           value={tokenOut}
           onChange={(v) => setTokenOut(v as TokenSymbol)}
           options={TOKENS}
@@ -343,44 +381,82 @@ export default function SwapForm() {
 
         <div
           style={{
-            marginTop: 4,
-            padding: '8px 10px',
-            borderRadius: 8,
-            border: '1px dashed #333',
+            marginTop: 8,
+            padding: '10px 12px',
+            borderRadius: 12,
+            border: '1px dashed #374151',
             background: '#020617',
-            fontSize: 14,
+            fontSize: 13,
             color: '#9ca3af',
+            textAlign: 'right',
           }}
         >
           Estimated output will appear here.
         </div>
       </div>
 
+      {/* -------------------- */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontSize: 11,
+          color: '#9ca3af',
+          marginTop: 4,
+        }}
+      >
+        <span>
+          Gas Fees
+          <span className="info-dot">?</span>
+        </span>
+        <span>--</span>
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontSize: 11,
+          color: '#9ca3af',
+        }}
+      >
+        <span>
+          Slippage
+          <span className="info-dot">?</span>
+        </span>
+        <span>0.5%</span>
+      </div>
+
       {connectError && (
-        <div style={{ fontSize: 12, color: '#f87171' }}>
+        <div style={{ fontSize: 12, color: '#f97373', marginTop: 4 }}>
           {connectError.message}
         </div>
       )}
 
-      <TxStatus status={txStatus} txHash={lastTxHash} errorMessage={errorMessage} />
+      <TxStatus
+        status={txStatus}
+        txHash={lastTxHash}
+        errorMessage={errorMessage}
+      />
 
-      {/* Swap */}
+      {/* Swap button */}
       <button
         type="button"
         onClick={handleSwapClick}
         disabled={!isConnected || isSwapping}
         style={{
-          marginTop: 6,
+          marginTop: 8,
           width: '100%',
-          padding: '10px 12px',
+          padding: '11px 14px',
           borderRadius: 999,
           border: 'none',
           fontSize: 15,
-          fontWeight: 500,
+          fontWeight: 600,
           cursor: !isConnected || isSwapping ? 'not-allowed' : 'pointer',
-          background: isConnected ? '#22c55e' : '#4b5563',
-          color: '#0b1120',
-          opacity: isSwapping ? 0.7 : 1,
+          background: isConnected
+            ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #22c55e 100%)'
+            : '#4b5563',
+          color: isConnected ? '#020617' : '#e5e7eb',
+          opacity: isSwapping ? 0.85 : 1,
         }}
       >
         {!isConnected
