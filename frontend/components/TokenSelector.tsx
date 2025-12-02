@@ -32,7 +32,7 @@ export default function TokenSelector({
         }}
       >
         <span>{label}</span>
-        <span style={{ fontSize: 11, color: '#6b7280' }}>Base Sepolia</span>
+        <span style={{ fontSize: 11, color: '#6b7280' }}>Ethereum Sepolia</span>
       </div>
 
       <div
