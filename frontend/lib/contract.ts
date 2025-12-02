@@ -1,24 +1,50 @@
 // frontend/lib/contract.ts
+
 import { getAddress, isAddress } from 'viem';
 
+/**
+ * Reads an address from environment variables with optional fallback.
+ * Ensures the address is valid and normalized using getAddress().
+ */
 const resolveAddress = (
-  key: string,
-  fallback?: string,
+  key:
+    | 'NEXT_PUBLIC_TOKEN_SWAP_ADDRESS'
+    | 'NEXT_PUBLIC_FAKE_USDT_ADDRESS'
+    | 'NEXT_PUBLIC_FAKE_USDC_ADDRESS',
+  fallback?: string
 ): `0x${string}` => {
-  const value = process.env[key];
-  if (value && isAddress(value)) return getAddress(value);
-  if (fallback && isAddress(fallback)) {
-    console.warn(`Using fallback for ${key}`);
-    return getAddress(fallback);
+  // Instead of process.env[key], directly access known env variables
+  const envMap: Record<string, string | undefined> = {
+    NEXT_PUBLIC_TOKEN_SWAP_ADDRESS: process.env.NEXT_PUBLIC_TOKEN_SWAP_ADDRESS,
+    NEXT_PUBLIC_FAKE_USDT_ADDRESS: process.env.NEXT_PUBLIC_FAKE_USDT_ADDRESS,
+    NEXT_PUBLIC_FAKE_USDC_ADDRESS: process.env.NEXT_PUBLIC_FAKE_USDC_ADDRESS,
+  };
+
+  const value = envMap[key];
+
+  if (!value) {
+    if (fallback && isAddress(fallback)) return getAddress(fallback);
+    throw new Error(`Environment variable ${key} is missing.`);
   }
-  throw new Error(`Missing or invalid env var ${key}`);
+
+  if (!isAddress(value)) {
+    throw new Error(`Invalid address in env var ${key}`);
+  }
+
+  return getAddress(value);
 };
 
+/**
+ * Swap contract address — loaded entirely from environment.
+ * Must exist in NEXT_PUBLIC_TOKEN_SWAP_ADDRESS
+ */
 export const TOKEN_SWAP_ADDRESS = resolveAddress(
-  'NEXT_PUBLIC_TOKEN_SWAP_ADDRESS',
-  '0xB80609D89eFE4b3e1A0Ab91d6c16BB520B762256',
+  'NEXT_PUBLIC_TOKEN_SWAP_ADDRESS'
 );
 
+/**
+ * TokenSwap ABI
+ */
 export const tokenSwapAbi = [
   {
     inputs: [

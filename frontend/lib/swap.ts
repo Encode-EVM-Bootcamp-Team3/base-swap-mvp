@@ -16,6 +16,13 @@ if (!FAKE_USDT_ADDRESS || !FAKE_USDC_ADDRESS) {
   );
 }
 
+export function estimateOutput(amountIn: string, decimals = 6): string {
+  if (!amountIn) return '';
+  const num = Number(amountIn);
+  if (isNaN(num) || num <= 0) return '';
+  return num.toFixed(decimals);
+}
+
 export async function approveUSDT(spender: string, amount: bigint) {
   return writeContract(config, {
     address: FAKE_USDT_ADDRESS,

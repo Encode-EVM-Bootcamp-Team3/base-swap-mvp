@@ -3,50 +3,17 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount, useConnect, useDisconnect, useWriteContract } from 'wagmi';
-import { erc20Abi, getAddress, isAddress, parseUnits } from 'viem';
+import { erc20Abi, parseUnits } from 'viem';
 import { sepolia } from 'wagmi/chains';
+
 import TokenSelector from './TokenSelector';
 import TxStatus from './TxStatus';
+
 import { TOKEN_SWAP_ADDRESS, tokenSwapAbi } from '../lib/contract';
+import { TOKENS, TOKENS_BY_SYMBOL, TokenSymbol } from '../lib/tokens';
+import { estimateOutput } from '../lib/swap';
 
 type TxStatusValue = 'idle' | 'pending' | 'success' | 'error';
-
-const resolveAddress = (key: string, fallback?: string): `0x${string}` => {
-  const value = process.env[key];
-  if (value && isAddress(value)) return getAddress(value);
-  if (fallback && isAddress(fallback)) {
-    console.warn(`Using fallback for ${key}`);
-    return getAddress(fallback);
-  }
-  throw new Error(`Missing or invalid env var ${key}`);
-};
-
-const TOKENS = [
-  {
-    symbol: 'FUSDT',
-    address: resolveAddress(
-      'NEXT_PUBLIC_FAKE_USDT_ADDRESS',
-      '0x58d1fB5788283Bc6abb12cF958f56ABAAAf6CC7C'
-    ),
-    decimals: 6,
-  },
-  {
-    symbol: 'FUSDC',
-    address: resolveAddress(
-      'NEXT_PUBLIC_FAKE_USDC_ADDRESS',
-      '0x51e78127EA289f36E39d6685bd7e59468814c813'
-    ),
-    decimals: 6,
-  },
-] as const;
-
-type TokenSymbol = (typeof TOKENS)[number]['symbol'];
-
-const TOKENS_BY_SYMBOL: Record<TokenSymbol, (typeof TOKENS)[number]> =
-  TOKENS.reduce(
-    (acc, token) => ({ ...acc, [token.symbol]: token }),
-    {} as Record<TokenSymbol, (typeof TOKENS)[number]>
-  );
 
 function shortenAddress(addr: string) {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -56,9 +23,10 @@ export default function SwapForm() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const [tokenIn, setTokenIn] = useState<TokenSymbol>('FUSDT');
-  const [tokenOut, setTokenOut] = useState<TokenSymbol>('FUSDC');
+  const [tokenIn, setTokenIn] = useState<TokenSymbol>(TOKENS[0].symbol);
+  const [tokenOut, setTokenOut] = useState<TokenSymbol>(TOKENS[1].symbol);
   const [amountIn, setAmountIn] = useState('');
+  const [estimatedOut, setEstimatedOut] = useState('');
   const [txStatus, setTxStatus] = useState<TxStatusValue>('idle');
   const [lastTxHash, setLastTxHash] = useState<string>();
   const [errorMessage, setErrorMessage] = useState<string>();
@@ -84,6 +52,8 @@ export default function SwapForm() {
   const ensureValidAmount = (value: string) =>
     value && Number(value) > 0 && !Number.isNaN(Number(value));
 
+  const isSwapping = txStatus === 'pending';
+
   const handleSwapClick = async () => {
     setErrorMessage(undefined);
     setLastTxHash(undefined);
@@ -100,11 +70,6 @@ export default function SwapForm() {
 
     if (tokenIn === tokenOut) {
       alert('Token In and Token Out cannot be the same.');
-      return;
-    }
-
-    if (!tokenInMeta || !tokenOutMeta) {
-      alert('Token metadata missing.');
       return;
     }
 
@@ -143,6 +108,9 @@ export default function SwapForm() {
   };
 
   const handleApproveOnly = async () => {
+    setErrorMessage(undefined);
+    setLastTxHash(undefined);
+
     if (!isConnected || !address) {
       alert('Please connect your wallet first.');
       return;
@@ -179,9 +147,8 @@ export default function SwapForm() {
   const handleSwitchTokens = () => {
     setTokenIn(tokenOut);
     setTokenOut(tokenIn);
+    setEstimatedOut(estimateOutput(amountIn, tokenInMeta.decimals));
   };
-
-  const isSwapping = txStatus === 'pending';
 
   const cardStyle: React.CSSProperties = {
     borderRadius: 24,
@@ -284,14 +251,19 @@ export default function SwapForm() {
           label="Pay"
           value={tokenIn}
           onChange={(v) => setTokenIn(v as TokenSymbol)}
-          options={TOKENS}
+          options={TOKENS as any}
         />
 
         <input
           type="number"
           placeholder="0.00"
           value={amountIn}
-          onChange={(e) => setAmountIn(e.target.value)}
+          onChange={(e) => {
+            setAmountIn(e.target.value);
+            setEstimatedOut(
+              estimateOutput(e.target.value, tokenOutMeta.decimals)
+            );
+          }}
           style={{
             marginTop: 6,
             width: '100%',
@@ -313,7 +285,7 @@ export default function SwapForm() {
             textAlign: 'right',
           }}
         >
-          Balance: -- FUSDT
+          Balance: -- {tokenIn}
         </div>
       </div>
 
@@ -376,26 +348,27 @@ export default function SwapForm() {
           label="Receive"
           value={tokenOut}
           onChange={(v) => setTokenOut(v as TokenSymbol)}
-          options={TOKENS}
+          options={TOKENS as any}
         />
 
         <div
           style={{
-            marginTop: 8,
-            padding: '10px 12px',
-            borderRadius: 12,
-            border: '1px dashed #374151',
+            marginTop: 4,
+            padding: '8px 10px',
+            borderRadius: 8,
+            border: '1px dashed #333',
             background: '#020617',
-            fontSize: 13,
+            fontSize: 14,
             color: '#9ca3af',
-            textAlign: 'right',
           }}
         >
-          Estimated output will appear here.
+          {ensureValidAmount(amountIn)
+            ? `Estimated output: ${estimatedOut} ${tokenOut}`
+            : 'Estimated output will appear here.'}
         </div>
       </div>
 
-      {/* -------------------- */}
+      {/* Extra info */}
       <div
         style={{
           display: 'flex',
@@ -405,10 +378,7 @@ export default function SwapForm() {
           marginTop: 4,
         }}
       >
-        <span>
-          Gas Fees
-          <span className="info-dot">?</span>
-        </span>
+        <span>Gas Fees</span>
         <span>--</span>
       </div>
       <div
@@ -419,10 +389,7 @@ export default function SwapForm() {
           color: '#9ca3af',
         }}
       >
-        <span>
-          Slippage
-          <span className="info-dot">?</span>
-        </span>
+        <span>Slippage</span>
         <span>0.5%</span>
       </div>
 
