@@ -27,41 +27,34 @@ No backend server is required — all interactions happen via smart contract RPC
 
 ```
 base-swap-mvp/
-├── contracts/                   # Solidity smart contracts
-│   ├── FakeUSDC.sol
-│   ├── FakeUSDT.sol
-│   ├── TokenSwap.sol
-│   └── test/TokenSwap.test.js
+├── contracts/ # Solidity smart contracts
+│ ├── FakeUSDC.sol
+│ ├── FakeUSDT.sol
+│ ├── TokenSwap.sol
+│ └── test/
 │
-├── scripts/                    # Automation scripts
-│   ├── deploy_tokens.js        # Deploy USDT & USDC
-│   ├── deploy_swap.js          # Deploy TokenSwap
-│   ├── mint_tokens.js          # Mint tokens
-│   └── fundLiquidity.js        # Provide liquidity
+├── scripts/ # Deployment & token utilities
+│ ├── deploy_tokens.js
+│ ├── deploy_swap.js
+│ ├── mint_tokens.js
+│ └── fundLiquidity.js
 │
-├── frontend/                   # UI application
-│   ├── lib/
-│   │   ├── wagmiClient.ts
-│   │   ├── swap.ts
-│   │   ├── tokenSwapAbi.ts
-│   │   └── contract.ts
-│   ├── components/
-│   │   ├── SwapCard.tsx
-│   │   ├── SwapForm.tsx
-│   │   ├── TokenSelector.tsx
-│   │   └── TxStatus.tsx
-│   ├── pages/
-│   │   ├── index.tsx
-│   │   ├── _app.tsx
-│   │   └── _document.tsx
-│   ├── abi/FakeUSDT.json
-│   ├── abi/FakeUSDC.json
-│   └── styles/
+├── frontend/ # Next.js UI frontend
+│ ├── abi/
+│ ├── components/
+│ ├── lib/
+│ ├── pages/
+│ ├── public/
+│ │ ├── screenshots/
+│ │ │ └── swap-ui.png
+│ ├── styles/
+│ ├── package.json
+│ └── tsconfig.json
 │
 ├── hardhat.config.ts
 ├── README.md
 ├── package.json
-└── .env (ignored)
+└── tsconfig.json
 ```
 
 ---
