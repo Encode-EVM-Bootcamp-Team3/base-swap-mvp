@@ -5,7 +5,7 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        <title>Base Swap</title>
+        <meta name="description" content="Base Swap MVP" />
       </Head>
       <body>
         <Main />
